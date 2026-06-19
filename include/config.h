@@ -28,6 +28,21 @@
 
 // Linux boot config
 #define VRAM_SIZE (512ULL * 1024 * 1024)
+#ifndef ENABLE_LINUX_WAKE_BEACON
+#define ENABLE_LINUX_WAKE_BEACON 1
+#endif
+#ifndef LINUX_WAKE_BEACON_TOKEN
+#define LINUX_WAKE_BEACON_TOKEN "ps5-linux"
+#endif
+#ifndef LINUX_WAKE_BEACON_PORT
+#define LINUX_WAKE_BEACON_PORT 9755
+#endif
+#ifndef LINUX_WAKE_BEACON_REPEATS
+#define LINUX_WAKE_BEACON_REPEATS 3
+#endif
+#ifndef LINUX_WAKE_BEACON_INTERVAL_US
+#define LINUX_WAKE_BEACON_INTERVAL_US 300000
+#endif
 #define CMD_LINE                                                               \
   "root=/dev/sda2 rw rootwait console=ttyTitania0 console=tty0 "               \
   "video=DP-1:1920x1080@60 mitigations=off idle=halt pci=pcie_bus_perf"

@@ -1,5 +1,6 @@
 #include "hv_defeat_0304.h"
 #include "hv_defeat_0506.h"
+#include "linux_wake_beacon.h"
 #include "loader.h"
 #include "prepare_resume.h"
 #include "utils.h"
@@ -37,6 +38,8 @@ int main(void) {
   notify("Finished preparation. Going to rest mode in 5 seconds.\nPlease wait "
          "for the orange light to stop "
          "blinking and then wakeup to Linux :)\n");
+
+  linux_wake_beacon_send((unsigned int)fw);
 
   sleep(5);
   enter_rest_mode();
