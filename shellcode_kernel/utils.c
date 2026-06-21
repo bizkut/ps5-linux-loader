@@ -104,7 +104,6 @@ void init_global_pointers(volatile shellcode_kernel_args *args_ptr) {
   smp_no_rendevous_barrier =
       (void (*)(void *))args.fun_smp_no_rendevous_barrier;
 
-  transmitter_control = (int (*)(int, void *))args.fun_transmitter_control;
   mp3_initialize = (int (*)(int))args.fun_mp3_initialize;
   mp3_invoke = (int (*)(int, void *, void *))args.fun_mp3_invoke;
   g_vbios = args.g_vbios;

@@ -41,7 +41,6 @@ typedef struct _offset_list {
   uint64_t KERNEL_CFI_CHECK;
   /* Internal functions to prepare boot */
   uint64_t G_VBIOS;
-  uint64_t FUN_TRANSMITTER_CONTROL;
   uint64_t FUN_MP3_INITIALIZE;
   uint64_t FUN_MP3_INVOKE;
   /* Wifi FW */

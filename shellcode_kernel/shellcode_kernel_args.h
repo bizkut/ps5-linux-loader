@@ -14,7 +14,6 @@ typedef struct {
   uint64_t fun_hv_iommu_wait_completion;
   uint64_t fun_smp_rendezvous;
   uint64_t fun_smp_no_rendevous_barrier;
-  uint64_t fun_transmitter_control;
   uint64_t fun_mp3_initialize;
   uint64_t fun_mp3_invoke;
   uint64_t g_vbios;

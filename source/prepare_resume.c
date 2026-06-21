@@ -132,7 +132,6 @@ uint64_t prepare_sck_args(void) {
       ktext + env_offset.FUN_SMP_NO_RENDEVOUS_BARRIER;
   args.g_vbios = ktext + env_offset.G_VBIOS;
 
-  args.fun_transmitter_control = ktext + env_offset.FUN_TRANSMITTER_CONTROL;
   args.fun_mp3_initialize = ktext + env_offset.FUN_MP3_INITIALIZE;
   args.fun_mp3_invoke = ktext + env_offset.FUN_MP3_INVOKE;
 

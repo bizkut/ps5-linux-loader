@@ -8,7 +8,6 @@ extern void (*smp_rendezvous)(void (*setup_func)(void *),
                               void (*action_func)(void *),
                               void (*teardown_func)(void *), void *arg);
 extern void (*smp_no_rendevous_barrier)(void *);
-extern int (*transmitter_control)(int cmd, void *control);
 extern int (*mp3_initialize)(int vmid);
 extern int (*mp3_invoke)(int cmd_id, void *req, void *rsp);
 extern uint64_t g_vbios;
