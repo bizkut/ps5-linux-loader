@@ -137,6 +137,10 @@ void boot_linux(void) {
   mp3_set_hdcp_packet(0, 1);
   mp3_enable_output(0, 1);
 
+  // Initialize USB-C (be=1) for DP alt mode.
+  mp3_set_hdcp_packet(1, 1);
+  mp3_enable_output(1, 1);
+
   // Copy bzImage and initrd into contiguous memory.
   memcpy(&info, (void *)args.linux_info_va, sizeof(struct linux_info));
 
