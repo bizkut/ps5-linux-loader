@@ -1,5 +1,9 @@
 # PS5 Linux Loader - Agent Guide
 
+## Git Commit Rules
+- Do NOT include AI notations in commit messages (no "Generated with Devin", "Co-Authored-By: Devin", etc.)
+- Write commit messages as a normal developer would — concise, focused on why
+
 ## Overview
 The PS5 Linux loader is a payload ELF that runs on the PS5 OS before booting Linux.
 It defeats the hypervisor, initializes hardware, copies the kernel/initrd into memory, and boots Linux.
