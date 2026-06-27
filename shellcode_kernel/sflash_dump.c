@@ -219,13 +219,16 @@ void dump_sflash(struct linux_info *info) {
   icc_base = (volatile uint8_t *)PHYS_TO_DMAP(ICC_BASE_PA);
   icc_doorbell = (volatile uint32_t *)PHYS_TO_DMAP(ICC_DOORBELL_PA);
 
-  /* Use the sflash dump address set by the loader (pages already installed) */
+  /* Use the kernel VA set by the loader (pages installed via
+   * install_page_syscore). The kernel shellcode runs in syscore context
+   * and can access this VA directly. */
   sflash_pa = info->sflash_dump;
   if (!sflash_pa) {
     printf("[sflash] No sflash dump address from loader, skipping\n");
     return;
   }
-  sflash_va = (uint8_t *)PHYS_TO_DMAP(sflash_pa);
+  /* Use the VA directly — pages were installed by the loader */
+  sflash_va = (uint8_t *)sflash_pa;
 
   printf("[sflash] Dump PA: 0x%lx\n", sflash_pa);
   printf("[sflash] ICC base: 0x%lx, doorbell: 0x%lx\n",

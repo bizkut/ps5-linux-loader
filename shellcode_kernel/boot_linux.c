@@ -171,9 +171,27 @@ void boot_linux(void) {
   memcpy((void *)PHYS_TO_DMAP(info.initrd), (void *)initrd, info.initrd_size);
 
   /* Dump serial flash via ICC mailbox polling (after HV defeat) */
-  /* sflash_dump and sflash_size were set by the loader when it installed
-   * the pages. dump_sflash will use info->sflash_dump as the PA. */
-  dump_sflash(&info);
+  /* The loader installed pages at a kernel VA (0xFFFF8000...) and stored
+   * it in info.sflash_dump. We write the dump to this VA, then copy it
+   * to the cave PA via DMAP for Linux to access via e820. */
+  {
+    uintptr_t sflash_kva = info.sflash_dump;
+    uintptr_t sflash_cave_pa = info.initrd + ALIGN_UP(info.initrd_size, PAGE_SIZE);
+    sflash_cave_pa = (sflash_cave_pa + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+
+    /* Write dump to kernel VA (pages installed by loader) */
+    info.sflash_dump = sflash_kva;
+    dump_sflash(&info);
+
+    /* Copy dump from kernel VA to cave PA via DMAP */
+    printf("[sflash] Copying dump from VA 0x%lx to PA 0x%lx (%zu bytes)\n",
+           sflash_kva, sflash_cave_pa, info.sflash_size);
+    memcpy((void *)PHYS_TO_DMAP(sflash_cave_pa), (void *)sflash_kva,
+           info.sflash_size);
+
+    /* Set sflash_dump to cave PA for Linux e820 */
+    info.sflash_dump = sflash_cave_pa;
+  }
 
   /* Copy linux_info to cave area (includes sflash dump location) */
   memcpy((void *)PHYS_TO_DMAP(cave_linux_info), &info,
