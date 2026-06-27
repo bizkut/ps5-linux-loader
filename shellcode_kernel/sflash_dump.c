@@ -168,6 +168,8 @@ static int icc_nvs_read(uint8_t partition, uint16_t offset, uint16_t length,
   ret = icc_poll_reply(reply, 12000);
   if (ret < 0)
     return -1;
+  if (ret < ICC_MSG_HEADER_SIZE + 2)
+    return -1;
 
   /* Reply data starts at data[2] */
   struct icc_msg *rsp = (struct icc_msg *)reply;
@@ -180,6 +182,22 @@ static int icc_nvs_read(uint8_t partition, uint16_t offset, uint16_t length,
     data[i] = rsp->data[2 + i];
 
   return copy_len;
+}
+
+static size_t sflash_copy_nvs(uint8_t *sflash_va, size_t total_copied,
+                              uint8_t *buf, int len) {
+  size_t nvs_remaining = SFLASH_NVS_SIZE - total_copied;
+
+  if (len <= 0 || nvs_remaining == 0)
+    return total_copied;
+
+  if ((size_t)len > nvs_remaining)
+    len = nvs_remaining;
+
+  for (int i = 0; i < len; i++)
+    sflash_va[SFLASH_NVS_OFFSET + total_copied + i] = buf[i];
+
+  return total_copied + len;
 }
 
 void dump_sflash(struct linux_info *info) {
@@ -203,10 +221,18 @@ void dump_sflash(struct linux_info *info) {
   printf("[sflash] ICC base: 0x%lx, doorbell: 0x%lx\n",
          (uint64_t)icc_base, (uint64_t)icc_doorbell);
 
+  for (size_t i = 0; i < SFLASH_TOTAL_SIZE; i++)
+    sflash_va[i] = 0xff;
+
   /* Try reading NVS partitions (0-7) to dump the NVS area */
   for (uint8_t partition = 0; partition < 8; partition++) {
-    uint16_t offset = 0;
+    uint32_t offset = 0;
     uint16_t chunk_len = ICC_MAX_DATA_LEN - 2;  /* reply data starts at [2] */
+
+    if (total_copied >= SFLASH_NVS_SIZE) {
+      printf("[sflash] NVS dump area full\n");
+      break;
+    }
 
     /* Try first read to see if partition exists */
     uint8_t buf[ICC_MAX_DATA_LEN];
@@ -220,20 +246,22 @@ void dump_sflash(struct linux_info *info) {
     printf("[sflash] partition %d: got %d bytes at offset 0\n", partition, n);
 
     /* Copy to cave area */
-    for (int i = 0; i < n; i++)
-      sflash_va[SFLASH_NVS_OFFSET + total_copied + i] = buf[i];
-    total_copied += n;
+    total_copied = sflash_copy_nvs(sflash_va, total_copied, buf, n);
 
     /* Read remaining data in chunks */
     offset = n;
-    while (offset < 0x10000) {  /* max 64KB per partition */
-      n = icc_nvs_read(partition, offset, chunk_len, buf);
+    while (offset < 0x10000 && total_copied < SFLASH_NVS_SIZE) {
+      uint16_t read_len = chunk_len;
+      uint32_t remaining = 0x10000 - offset;
+
+      if (remaining < read_len)
+        read_len = remaining;
+
+      n = icc_nvs_read(partition, offset, read_len, buf);
       if (n <= 0)
         break;
 
-      for (int i = 0; i < n; i++)
-        sflash_va[SFLASH_NVS_OFFSET + total_copied + i] = buf[i];
-      total_copied += n;
+      total_copied = sflash_copy_nvs(sflash_va, total_copied, buf, n);
       offset += n;
     }
 
@@ -258,10 +286,6 @@ void dump_sflash(struct linux_info *info) {
       struct icc_msg *rsp = (struct icc_msg *)reply;
       printf("[sflash] GENERAL service reply: type=0x%04x len=%d\n",
              rsp->msg_type, rsp->length);
-      /* Store first 256 bytes of reply for analysis */
-      int save_len = ret > 256 ? 256 : ret;
-      for (int i = 0; i < save_len; i++)
-        sflash_va[0xF00000 + i] = reply[i];  /* Store at 15MB offset */
     } else {
       printf("[sflash] GENERAL service: no reply\n");
     }
@@ -270,7 +294,7 @@ void dump_sflash(struct linux_info *info) {
   /* Store NVS dump info in linux_info */
   if (total_copied > 0) {
     info->sflash_dump = sflash_pa;
-    info->sflash_size = SFLASH_NVS_OFFSET + total_copied;
+    info->sflash_size = SFLASH_TOTAL_SIZE;
     printf("[sflash] Dumped %d bytes of NVS to PA 0x%lx\n",
            total_copied, sflash_pa);
     printf("[sflash] Total sflash region: 0x%lx bytes\n",
