@@ -2,6 +2,7 @@
 #include "../include/config.h"
 #include "../include/linux.h"
 #include "../shellcode_hv/shellcode_hv.h"
+#include "sflash_dump.h"
 #include "utils.h"
 
 int (*mp3_initialize)(int vmid) = NULL;
@@ -164,9 +165,17 @@ void boot_linux(void) {
   info.bzimage = cave_bzImage;
   info.initrd = cave_bzImage + ALIGN_UP(info.bzimage_size, PAGE_SIZE);
 
-  memcpy((void *)PHYS_TO_DMAP(cave_linux_info), &info,
-         sizeof(struct linux_info));
+  /* Copy bzImage and initrd to cave area first */
   memcpy((void *)PHYS_TO_DMAP(info.bzimage), (void *)bzimage,
          info.bzimage_size);
   memcpy((void *)PHYS_TO_DMAP(info.initrd), (void *)initrd, info.initrd_size);
+
+  /* Dump serial flash via ICC mailbox polling (after HV defeat) */
+  info.sflash_dump = 0;
+  info.sflash_size = 0;
+  dump_sflash(&info);
+
+  /* Copy linux_info to cave area (includes sflash dump location) */
+  memcpy((void *)PHYS_TO_DMAP(cave_linux_info), &info,
+         sizeof(struct linux_info));
 }

@@ -121,6 +121,8 @@ struct linux_info {
   int n_tmrs;
   tmr tmrs[64];
   char cmdline[2048];
+  uintptr_t sflash_dump;  // PA of sflash dump in cave area (0 = none)
+  size_t sflash_size;     // size of sflash dump
 };
 
 #endif

@@ -91,6 +91,13 @@ static void e820_memory_setup(struct boot_params *bp) {
   for (int i = 0; i < info.n_tmrs; i++) {
     append_e820_table(bp, info.tmrs[i].start, info.tmrs[i].end, E820_TYPE_RESERVED);
   }
+
+  /* Reserve sflash dump area in cave region */
+  if (info.sflash_dump && info.sflash_size) {
+    append_e820_table(bp, info.sflash_dump,
+                      info.sflash_dump + info.sflash_size,
+                      E820_TYPE_RESERVED);
+  }
 }
 
 void boot_linux(void) {
