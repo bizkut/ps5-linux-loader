@@ -171,8 +171,8 @@ void boot_linux(void) {
   memcpy((void *)PHYS_TO_DMAP(info.initrd), (void *)initrd, info.initrd_size);
 
   /* Dump serial flash via ICC mailbox polling (after HV defeat) */
-  info.sflash_dump = 0;
-  info.sflash_size = 0;
+  /* sflash_dump and sflash_size were set by the loader when it installed
+   * the pages. dump_sflash will use info->sflash_dump as the PA. */
   dump_sflash(&info);
 
   /* Copy linux_info to cave area (includes sflash dump location) */

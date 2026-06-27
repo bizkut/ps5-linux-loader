@@ -219,10 +219,12 @@ void dump_sflash(struct linux_info *info) {
   icc_base = (volatile uint8_t *)PHYS_TO_DMAP(ICC_BASE_PA);
   icc_doorbell = (volatile uint32_t *)PHYS_TO_DMAP(ICC_DOORBELL_PA);
 
-  /* Calculate sflash dump location: after initrd in cave area */
-  sflash_pa = info->initrd + ALIGN_UP(info->initrd_size, PAGE_SIZE);
-  /* Align to page boundary */
-  sflash_pa = (sflash_pa + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+  /* Use the sflash dump address set by the loader (pages already installed) */
+  sflash_pa = info->sflash_dump;
+  if (!sflash_pa) {
+    printf("[sflash] No sflash dump address from loader, skipping\n");
+    return;
+  }
   sflash_va = (uint8_t *)PHYS_TO_DMAP(sflash_pa);
 
   printf("[sflash] Dump PA: 0x%lx\n", sflash_pa);
@@ -299,17 +301,14 @@ void dump_sflash(struct linux_info *info) {
     }
   }
 
-  /* Store NVS dump info in linux_info */
+  /* sflash_dump and sflash_size were already set by the loader */
   if (total_copied > 0) {
-    info->sflash_dump = sflash_pa;
-    info->sflash_size = SFLASH_TOTAL_SIZE;
     printf("[sflash] Dumped %d bytes of NVS to PA 0x%lx\n",
            total_copied, sflash_pa);
     printf("[sflash] Total sflash region: 0x%lx bytes\n",
            info->sflash_size);
   } else {
-    info->sflash_dump = 0;
-    info->sflash_size = 0;
-    printf("[sflash] No data dumped\n");
+    printf("[sflash] No NVS data dumped (ICC polling failed?)\n");
+    printf("[sflash] Dump area still reserved at PA 0x%lx\n", sflash_pa);
   }
 }

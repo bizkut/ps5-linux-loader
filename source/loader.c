@@ -216,5 +216,26 @@ int fetch_linux(struct linux_info *info) {
                          0);
   }
 
+  /* Allocate and install pages for sflash dump area (2MB after initrd) */
+  {
+    size_t sflash_size = 2 * 1024 * 1024;  /* 2MB */
+    uintptr_t sflash_va = info->initrd + ALIGN_UP(info->initrd_size, PAGE_SIZE);
+    sflash_va = (sflash_va + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+
+    /* Allocate physical pages and install them at the cave VA.
+     * The kernel shellcode will access them via PHYS_TO_DMAP(sflash_va),
+     * which works because the cave area is at 0x100000000+ (physical addr
+     * range) and install_page_syscore creates the mapping. */
+    for (size_t i = 0; i < sflash_size; i += PAGE_SIZE) {
+      uint64_t page = alloc_page();
+      install_page_syscore(sflash_va + i, page, 0);
+    }
+
+    info->sflash_dump = sflash_va;
+    info->sflash_size = sflash_size;
+    notify("Installed sflash dump pages at 0x%llx (2MB)\n",
+           (unsigned long long)sflash_va);
+  }
+
   return 0;
 }
