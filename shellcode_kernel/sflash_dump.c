@@ -112,11 +112,19 @@ static int icc_send_query(uint8_t *query) {
   /* Ring doorbell */
   icc_doorbell_write(ICC_REG_DOORBELL, ICC_SEND);
 
+  /* Small delay for EMC to process */
+  for (volatile int j = 0; j < 100000; j++)
+    ;
+
   return 0;
 }
 
 static int icc_poll_reply(uint8_t *reply, int timeout_ms) {
+  /* Rough delay: ~1ms at ~1.6GHz */
   for (int i = 0; i < timeout_ms; i++) {
+    for (volatile int j = 0; j < 800000; j++)
+      ;
+
     uint32_t status = icc_doorbell_read(ICC_REG_INTR_STATUS);
     if (!status)
       continue;
@@ -165,7 +173,7 @@ static int icc_nvs_read(uint8_t partition, uint16_t offset, uint16_t length,
 
   icc_send_query(query);
 
-  ret = icc_poll_reply(reply, 12000);
+  ret = icc_poll_reply(reply, 2000);
   if (ret < 0)
     return -1;
   if (ret < ICC_MSG_HEADER_SIZE + 2)
